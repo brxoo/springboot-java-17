@@ -3,6 +3,8 @@ package com.brxoo.course.services;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.EntityNotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -18,20 +20,20 @@ public class UserService {
 
 	@Autowired
 	private UserRepository repository;
-	
+
 	public List<User> findAll() {
 		return repository.findAll();
 	}
-	
+
 	public User findById(Long id) {
 		Optional<User> obj = repository.findById(id);
 		return obj.orElseThrow(() -> new ResourceNotFoundException(id));
 	}
-	
+
 	public User insert(User obj) {
 		return repository.save(obj);
 	}
-	
+
 	public void delete(Long id) {
 		try {
 			repository.deleteById(id);
@@ -41,12 +43,17 @@ public class UserService {
 			throw new DatabaseException(e.getMessage());
 		}
 	}
-	
+
 	public User update(Long id, User obj) {
-		@SuppressWarnings("deprecation")
-		User userEntity = repository.getOne(id);
-		updateData(userEntity, obj);
-		return repository.save(userEntity);
+		try {
+			@SuppressWarnings("deprecation")
+			User userEntity = repository.getOne(id);
+			updateData(userEntity, obj);
+			return repository.save(userEntity);
+			
+		} catch (EntityNotFoundException e) {
+			throw new ResourceNotFoundException(id);
+		}
 	}
 
 	private void updateData(User userEntity, User obj) {
